@@ -5,13 +5,10 @@
 
 *
 This file uses the following analytic dataset to address several research
-
-questions regarding net migration.
+questions regarding GDP and Literacy of countries in the world.
 
 Dataset Name: COTW_analytic_file created in external file
-
 STAT660-01_f18-team-3_project1_data_preparation.sas, which is assumed to be
-
 in the same directory as this file.
 
 Please see included file for dataset properties ;
@@ -19,227 +16,143 @@ Please see included file for dataset properties ;
 
 * environmental setup;
 
-* load external file that generates analytic dataset FRPM1516_analytic_file;
+* set relative file import path to current directory (using standard SAS trick;
+X "cd ""%substr(%sysget(SAS_EXECFILEPATH),1,%eval(%length(%sysget(SAS_EXECFILEPATH))-%length(%sysget(SAS_EXECFILENAME))))""";
 
-filename _inbox "%sysfunc(getoption(work))/STAT660-01_f18-team-3_project1_data_preparation.sas"; 
- 
-proc http method="get" url="https://raw.githubusercontent.com/stat660/team-3_project1/blob/v0.1/STAT660-01_f18-team-3_project1_data_preparation.sas"  
- 
-out=_inbox; 
- 
-run; 
- 
-filename _inbox clear; 
- 
- 
- 
-*******************************************************************************; 
- 
-* 
- 
-Research Question: What are the top 20 countries with the highest values of  
+* load external file that generates analytic dataset COTW_analytic_file ;
+%include '.\STAT660-01_f18-team-3_project1_data_preparation.sas';
 
-"Highest GDP"?  
- 
- 
- 
-Rationale: This should help identify contries with the highest GDP - It represents 
 
-the standard of living of the countries . 
  
- 
- 
-Methodology: Use PROC MEANS to compute the mean of GDP 
- 
-for Country, and output the results to a temporary dataset. Use PROC 
- 
-SORT extract and sort just the means the temporary dataset, and use PROC PRINT 
- 
-to print just the first twenty observations from the temporary dataset. 
- 
- 
- 
-Limitations: Missing data for some countries 
- 
- 
- 
-Possible Follow-up Steps: More carefully clean the values of the variable 
- 
-GDP so that the means computed do not include any possible 
+title1 
+    "Research Question: What are the top 20 countries with the highest values of GDP"? 
+    ; 
 
-illegal values. 
- 
-; 
- 
- 
- 
-proc means mean noprint data=COTW_analytic_file; 
- 
-  class Country; 
- 
-  var GDP; 
- 
-  output out=COTW_analytic_file_temp; 
- 
-run; 
- 
- 
- 
-proc sort data=COTW_analytic_file_temp (where=(_STAT_="MEAN")); 
- 
-  by descending GDP; 
- 
-run; 
- 
- 
- 
-proc print data=COTW_analytic_file_temp (obs=20) ; 
- 
-  id Country; 
- 
-  var GDP; 
- 
-  title1 "STAT 660: Team 3 Project 1 AN"; 
- 
-  title2 "Top 20 Countries with Highest GDP"; 
- 
-  footnote2 "Based on the above output, except for USA at rank 3, the 10 
+title2 
+    "Rationale: This should help identify contries with the highest GDP - GDP represents the health of a country's economy. It also represents the standard of living of the country." 
+    ;
 
-countries having the highest GDP are small-sized countries in Europe,
+footnote1 
+    "Based on the above output, except for USA at rank 3, 9 of the 10 countries having the highest GDP are small-sized countries in Europe,with Luxembourg ranked no.1."
+    ;
+
+footnote2
+    "These top 10 highest-GDP countries have the minimum GDP value of 30000(USD)per capita."
+    ;
+*  
+Methodology: Use PROC PRINT to print just the first twenty observations from 
+the temporary dataset created in the corresponding data-prep file
  
-with Luxembourg ranked no.1.These top 10 highest-GDP countries have the minimum 
-
-GDP value of 30000(USD)per capita";
-
+Limitations: Missing data for some countries. The methodology does not account 
+for countries with missing data, nor does it attempt to validate data in any way,
+like filtering for percentages between 0 and 1.
+ 
+Possible Follow-up Steps: More carefully clean the values of the variable GDP 
+so that the means computed do not include any possible illegal values. 
+;  
+proc print 
+        noobs
+        data=COTW_analytic_file_temp(obs=20) 
+    ; 
+    id 
+        Country
+    ; 
+    var 
+        GDP
+    ; 
 run;
- 
- 
- 
- 
-*******************************************************************************; 
- 
+title;
+footnote;
+
+
+
+title1 
+    "Research Question: Is there a correlation between GDP and net_migration?"
+    ; 
+
+title2 
+    "Rationale: This should help identify correlations between GDP and net_migration." 
+    ;
+
+footnote1
+    "Pearson Chi-Sq Test shows p-value <0.001 therefore we could accept Ho and can safely conclude that there is a significant correlation between GDP and net migration."
+    ;
 * 
- 
-Research Question: Is there a correlation between GDP and net_migration?  
- 
- 
- 
-Rationale: Identify correlations between GDP and net_migration. 
- 
- 
- 
 Methodology: Use PROC CORR can to compute Pearson product-moment correlation  
+coefficient between net_migration and GDP, as well as Spearman's rank-order 
+correlation, a nonparametric measures of association. PROC CORR also computes 
+simple descriptive statistics.   
  
-coefficient between net_migration and GDP, as well as Spearman's  
- 
-rank-order correlation, a nonparametric measures of association. PROC CORR  
- 
-also computes simple descriptive statistics.   
- 
- 
- 
-Limitations: Data dictionary is limited. Missing values for some countries
- 
- 
- 
+Limitations: Data dictionary is limited. Missing values for some countries.
+
 Possible Follow-up Steps: More carefully clean the values of the variable 
- 
 net_migration so that the means computed do not include any possible 
- 
 illegal values. 
- 
 ; 
- 
- 
- 
-proc corr data = COTW_analytic_file PEARSON SPEARMAN; 
- 
- var net_migration GDP ; 
- 
- title2 "Correlation Between Net Migration and GDP"; 
- 
- footnote2 "Pearson Chi-Sq Test shows p-value <0.001 therefore we could accept  
- 
-	    Ho and can safely conclude that there is a significant 
- 
-		correlation between GDP and net migration "; 
- 
-run; 
- 
- 
- 
-*******************************************************************************; 
- 
+proc corr 
+        data = COTW_analytic_file 
+        PEARSON 
+        SPEARMAN
+    ; 
+    var 
+        net_migration 
+        GDP 
+    ; 
+run;
+title;
+footnote; 
+
+
+
+title1 
+    "Research Question: What's the percentage of the countries with literacy rate of 50% or less ? What's the percentage of the countries with complete literacy(100%) ? "
+    ; 
+
+title2 
+    "Rationale: This would help inform the portion of low-literacy countries and the overall literacy status of the world. " 
+    ;
+
+footnote1
+    "Based on the above output, we could see that there's a fraction of 10% countries of the world that still have a very low literacy rate of less than 50%"
+    ; 
+    
+footnote2
+    "Meanwhile, 86.6% of countries have the literacy rate of above 50%"
+    ;
+
+footnote3
+    "Only 3.35% of countries reaching the complete Literacy rate of 100%"
+    ;
 * 
- 
-Research Question:   What the percentage of the countries with literacy rate of 50% or less ?  
- 
- 
- 
-Rationale: This would help inform the portion of low-literacy countries in the world. 
- 
- 
- 
-Methodology: Compute five-number summaries by Literacy rate indicator
+Methodology: Use proc means to study the five-number summary of each variable,
+create formats to bin values of Literacy based upon their 
+spread, and use proc freq to cross-tabulate bins.
 
-variable. Create formats to bin values of Literacy bin, categorize
+Limitations: Data dictionary is limited. Missing values for some countries.
 
-the variable "Literacy" into 3 groups, "100 percent", "over 50-high" and "under 50”.
-
-And use proc freq to cross-tabulate bins.
-
- 
- 
-Limitations: 
- 
- 
- 
-Follow-up Steps:; 
- 
- 
-
+Possible Follow-up Steps: More carefully clean the values of the variable 
+net_migration so that the means computed do not include any possible illegal 
+values. 
+;
 proc means
         min q1 median q3 max
         data= COTW_analytic_file
     ;
-    var
+    var 
         Literacy
     ;
-
-    footnote; 
 run;
-proc format;
 
-    value Literacy_bin
-
-    1-<50 = "under50"
-
-    50-99.9 = "over50-high"
-
-	100 = "100 percent"
-
-    ;
-
-run;
 proc freq
-
-    data=COTW_analytic_file;
-
-    table Literacy;
-
+         data=COTW_analytic_file
+    ;
+    table
+         Literacy
+    ;
     format
-
-        Literacy Literacy_bin.;
-
-	footnote2 "Based on the above output, we could see that there's a fraction
- 
-of 10% countries of the world that still have a very low literacy rate of less than 50%.
-
-Meanwhile, 86.6% of countries have the literacy rate of above 50% and only 3.35% 
-
-of countries reaching the complete Literacy rate of 100%   "; 
-
+         Literacy Literacy_bin.
+    ;
 run;
- 
- 
-*******************************************************************************; 
+title;
+footnote;
+
